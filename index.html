@@ -284,9 +284,6 @@
     </div>
 </div>
 
-
-  
-
 <script>
     const orderList = [];
     const orderItems = document.getElementById('order-items');
@@ -376,26 +373,27 @@
     cashButton.addEventListener('click', () => {
         const totalPrice = calculateTotalPrice();
         if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
+            saveOrderForStaff();
             alert('ชำระเงินเรียบร้อย');
             orderList.length = 0; // Clear the order list
             updateOrderList();
+          
+
         }
     });
 
-    let countdownInterval; // ประกาศตัวแปรที่ใช้ทั่วทั้งสคริปต์
-
-transferButton.addEventListener('click', () => {
-    const totalPrice = orderList.reduce((acc, order) => acc + (order.price * order.quantity), 0);
-    if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
-        document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
-        document.getElementById('qr-modal').style.display = 'block';
+    transferButton.addEventListener('click', () => {
+        const totalPrice = calculateTotalPrice();
+        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
+            document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
+            document.getElementById('qr-modal').style.display = 'block';
 
         // ตั้งค่าการนับถอยหลัง
         let timeLeft = 20;  // เวลานับถอยหลัง 20 วินาที
         const countdownElement = document.getElementById('countdown-timer');
         const countdownText = document.getElementById('countdown-text');
         
-        countdownInterval = setInterval(() => {
+        const countdownInterval = setInterval(() => {
             timeLeft--;
             countdownElement.textContent = timeLeft;
             countdownText.textContent = timeLeft;
@@ -403,6 +401,7 @@ transferButton.addEventListener('click', () => {
             if (timeLeft <= 0) {
                 clearInterval(countdownInterval);
                 document.getElementById('qr-modal').style.display = 'none';  // ปิด modal เมื่อหมดเวลา
+                saveOrderForStaff();
 
                 // รีเซ็ตรายการสินค้า
                 orderList.length = 0; // ลบรายการทั้งหมด
@@ -411,7 +410,6 @@ transferButton.addEventListener('click', () => {
         }, 1000);  // อัปเดตทุก 1 วินาที
     }
 });
-
 
 
 document.getElementById('close-qr').addEventListener('click', () => {
@@ -448,6 +446,39 @@ window.addEventListener('click', function (event) {
             item.style.display = text.includes(input) ? "block" : "none";
         });
     }
+    
+    function saveOrderForStaff() {
+        const orderId = `ORD-${Date.now()}`;
+        const orderData = {
+            id: orderId,
+            items: [...orderList],
+            total: calculateTotalPrice(),
+            status: "pending",
+            time: new Date().toLocaleString()
+        };
+
+        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+        existingOrders.push(orderData);
+        localStorage.setItem('orders', JSON.stringify(existingOrders));
+    }
+
+    function sendOrderToFirebase(orderList, totalPrice) {
+    db.ref('lastOrderNumber').once('value').then(snapshot => {
+        const orderNumber = (snapshot.val() || 0) + 1;
+        db.ref('lastOrderNumber').set(orderNumber);
+
+        const newOrderRef = db.ref('orders').push();
+        const orderData = {
+            orderNumber,
+            items: orderList,
+            total: totalPrice,
+            status: "pending",
+            createdAt: new Date().toISOString()
+        };
+
+        newOrderRef.set(orderData);
+    });
+}
 
     totalElement.addEventListener('click', () => {
         const summaryItems = document.getElementById('summary-items');
