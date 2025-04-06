@@ -373,17 +373,21 @@
         return orderList.reduce((total, item) => total + item.totalPrice, 0);
     }
 
+    // เมื่อกดปุ่ม "ชำระเงิน"
     cashButton.addEventListener('click', () => {
-        const totalPrice = calculateTotalPrice();
-        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
-            alert('ชำระเงินเรียบร้อย');
-            orderList.length = 0; // Clear the order list
-            updateOrderList();
-        }
-    });
+       const totalPrice = calculateTotalPrice();
+    if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
+        alert('ชำระเงินเรียบร้อย');
+        
+        // ส่งข้อมูลไปหน้าออเดอร์พนักงาน (เก็บใน localStorage)
+        localStorage.setItem('orderDetails', JSON.stringify(orderList));
+        window.location.href = 'employee_order_page.html'; // เปลี่ยน URL ไปหน้าออเดอร์พนักงาน
+    }
+});
+
 
     transferButton.addEventListener('click', () => {
-    const totalPrice = orderList.reduce((acc, order) => acc + order.price, 0);
+        const totalPrice = orderList.reduce((acc, order) => acc + (order.price * order.quantity), 0);
     if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
         document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
         document.getElementById('qr-modal').style.display = 'block';
@@ -407,6 +411,7 @@
                 updateOrderList(); // อัปเดตการแสดงผลรายการสินค้าในตะกร้า
             }
         }, 1000);  // อัปเดตทุก 1 วินาที
+        
     }
 });
 
