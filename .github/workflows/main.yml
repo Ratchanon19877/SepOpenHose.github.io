@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEP FOOD ออเดอร์</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #c92d22;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+        }
+        .order-list {
+            margin-top: 20px;
+            border-top: 2px solid #f44336;
+            padding-top: 20px;
+        }
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .order-item.completed {
+            background-color: #d4edda;
+        }
+        .order-item .complete-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .order-item .complete-button:hover {
+            background-color: #218838;
+        }
+        .completed-icon {
+            color: green;
+            font-size: 20px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <img src="images/lukchin.jpg" alt="SEP FOOD" style="width:250px;height:50px;">
+</header>
+<div class="container">
+    <h2>รายการออเดอร์</h2>
+    <div id="order-list" class="order-list">
+        <!-- รายการออเดอร์จะแสดงที่นี่ -->
+    </div>
+</div>
+
+<script>
+    // ฟังก์ชันดึงข้อมูลออเดอร์จาก API
+    async function fetchOrders() {
+        try {
+            const response = await fetch('http://localhost:3000/api/orders');
+            const orders = await response.json();
+            displayOrders(orders);
+        } catch (err) {
+            console.error('Error fetching orders:', err);
+        }
+    }
+
+    // ฟังก์ชันแสดงรายการออเดอร์
+    function displayOrders(orders) {
+        const orderListElement = document.getElementById('order-list');
+        orderListElement.innerHTML = '';
+        orders.forEach(order => {
+            const orderItem = document.createElement('div');
+            orderItem.classList.add('order-item');
+            if (order.completed) {
+                orderItem.classList.add('completed');
+            }
+
+            orderItem.innerHTML = `
+                <div>
+                    <strong>ออเดอร์ #${order._id}</strong>
+                    <ul>
+                        ${order.items.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                    <div><strong>ยอดรวม: ฿${order.total}</strong></div>
+                </div>
+                <button class="complete-button" data-id="${order._id}">
+                    ${order.completed ? 'เรียบร้อยแล้ว' : 'ทำเสร็จ'}
+                </button>
+                ${order.completed ? '<span class="completed-icon">✔</span>' : ''}
+            `;
+            orderListElement.appendChild(orderItem);
+        });
+
+        // เพิ่ม event listener ให้ปุ่มทำเสร็จ
+        const completeButtons = document.querySelectorAll('.complete-button');
+        completeButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const orderId = event.target.getAttribute('data-id');
+                markOrderAsCompleted(orderId);
+            });
+        });
+    }
+
+    // ฟังก์ชันทำเครื่องหมายว่าออเดอร์เสร็จแล้ว
+    async function markOrderAsCompleted(orderId) {
+        try {
+            const response = await fetch(`http://localhost:3000/api/orders/${orderId}`, {
+                method: 'PUT',
+            });
+            const updatedOrder = await response.json();
+            fetchOrders(); // รีเฟรชรายการ
+        } catch (err) {
+            console.error('Error marking order as completed:', err);
+        }
+    }
+
+    fetchOrders(); // เรียกใช้ฟังก์ชันดึงออเดอร์
+
+    // เชื่อมต่อกับ Socket.io server
+    const socket = io(); 
+
+    // เมื่อได้รับคำสั่งซื้อใหม่จากเซิร์ฟเวอร์
+    socket.on('new-order', (order) => {
+        console.log('New order received:', order);
+
+        // แสดงคำสั่งซื้อนี้ใน UI
+        const orderList = document.getElementById('order-list');
+        const orderItem = document.createElement('li');
+        orderItem.textContent = `Order: ${order.items.map(item => item.name).join(', ')} Total: ฿${order.total}`;
+        orderList.appendChild(orderItem);
+    });
+</script>
+</body>
+</html>
