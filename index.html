@@ -266,6 +266,8 @@
         <h2>สรุปรายการสั่งซื้อ</h2>
         <ul id="summary-items"></ul>
         <div class="total" id="summary-total">ยอดรวม: 0 บาท</div>
+        <div id="order-status" class="total">สถานะออเดอร์: <span id="status-text">รอการยืนยัน</span></div>
+
     </div>
 </div>
 
@@ -377,6 +379,7 @@
             alert('ชำระเงินเรียบร้อย');
             orderList.length = 0; // Clear the order list
             updateOrderList();
+            updateOrderStatus(orderId, "completed");  // เปลี่ยนสถานะเมื่อชำระเงินเสร็จ
           
 
         }
@@ -402,10 +405,12 @@
                 clearInterval(countdownInterval);
                 document.getElementById('qr-modal').style.display = 'none';  // ปิด modal เมื่อหมดเวลา
                 saveOrderForStaff();
+            
 
                 // รีเซ็ตรายการสินค้า
                 orderList.length = 0; // ลบรายการทั้งหมด
                 updateOrderList(); // อัปเดตการแสดงผลรายการสินค้าในตะกร้า
+                updateOrderStatus(orderId, "completed");  // เปลี่ยนสถานะเมื่อชำระเงินเสร็จ
             }
         }, 1000);  // อัปเดตทุก 1 วินาที
     }
@@ -478,6 +483,22 @@ window.addEventListener('click', function (event) {
 
         newOrderRef.set(orderData);
     });
+}
+
+function updateOrderStatus(orderId, status) {
+    // หากต้องการอัปเดต Firebase
+    db.ref('orders/' + orderId).update({ status: status });
+
+    // หรือถ้าคุณใช้ localStorage
+    let orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+        order.status = status;
+        localStorage.setItem('orders', JSON.stringify(orders));
+    }
+
+    // อัปเดตสถานะที่ UI
+    document.getElementById('status-text').textContent = status;
 }
 
     totalElement.addEventListener('click', () => {
