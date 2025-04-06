@@ -413,6 +413,19 @@ transferButton.addEventListener('click', () => {
 });
 
 
+
+document.getElementById('close-qr').addEventListener('click', () => {
+    document.getElementById('qr-modal').style.display = 'none';
+});
+
+window.addEventListener('click', function (event) {
+    const qrModal = document.getElementById('qr-modal');
+    if (event.target === qrModal) {
+        qrModal.style.display = 'none';
+    }
+});
+
+
     function openTab(evt, tabName) {
         const tabs = document.querySelectorAll('.menu');
         tabs.forEach(tab => {
