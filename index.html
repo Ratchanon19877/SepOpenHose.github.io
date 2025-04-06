@@ -373,21 +373,19 @@
         return orderList.reduce((total, item) => total + item.totalPrice, 0);
     }
 
-    // เมื่อกดปุ่ม "ชำระเงิน"
     cashButton.addEventListener('click', () => {
-       const totalPrice = calculateTotalPrice();
-    if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
-        alert('ชำระเงินเรียบร้อย');
-        
-        // ส่งข้อมูลไปหน้าออเดอร์พนักงาน (เก็บใน localStorage)
-        localStorage.setItem('orderDetails', JSON.stringify(orderList));
-        window.location.href = 'employee_order_page.html'; // เปลี่ยน URL ไปหน้าออเดอร์พนักงาน
-    }
-});
+        const totalPrice = calculateTotalPrice();
+        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
+            alert('ชำระเงินเรียบร้อย');
+            orderList.length = 0; // Clear the order list
+            updateOrderList();
+        }
+    });
 
+    let countdownInterval; // ประกาศตัวแปรที่ใช้ทั่วทั้งสคริปต์
 
-    transferButton.addEventListener('click', () => {
-        const totalPrice = orderList.reduce((acc, order) => acc + (order.price * order.quantity), 0);
+transferButton.addEventListener('click', () => {
+    const totalPrice = orderList.reduce((acc, order) => acc + (order.price * order.quantity), 0);
     if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
         document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
         document.getElementById('qr-modal').style.display = 'block';
@@ -397,7 +395,7 @@
         const countdownElement = document.getElementById('countdown-timer');
         const countdownText = document.getElementById('countdown-text');
         
-        const countdownInterval = setInterval(() => {
+        countdownInterval = setInterval(() => {
             timeLeft--;
             countdownElement.textContent = timeLeft;
             countdownText.textContent = timeLeft;
@@ -411,19 +409,6 @@
                 updateOrderList(); // อัปเดตการแสดงผลรายการสินค้าในตะกร้า
             }
         }, 1000);  // อัปเดตทุก 1 วินาที
-        
-    }
-});
-
-
-document.getElementById('close-qr').addEventListener('click', () => {
-    document.getElementById('qr-modal').style.display = 'none';
-});
-
-window.addEventListener('click', function (event) {
-    const qrModal = document.getElementById('qr-modal');
-    if (event.target === qrModal) {
-        qrModal.style.display = 'none';
     }
 });
 
