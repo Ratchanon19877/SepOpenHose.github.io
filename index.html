@@ -197,6 +197,25 @@
 <header>
     <img src="images/lukchin.jpg" alt="alternatetext" style="width:250px;height:50px;">
 </header>
+
+<div id="queue-container" style="
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.3);
+    z-index: 999;
+">
+    <h3 style="margin:0 0 10px 0; font-size:18px; text-align:center; color:#c92d22;">คิวออเดอร์</h3>
+    <div id="queue-list"></div>
+</div>
+
+
 <div class="container">
     <div class="tabs">
         <button class="tablink active" onclick="openTab(event, 'food-menu')">เมนูอาหาร</button>
@@ -267,7 +286,6 @@
         <ul id="summary-items"></ul>
         <div class="total" id="summary-total">ยอดรวม: 0 บาท</div>
         <div id="order-status" class="total">สถานะออเดอร์: <span id="status-text">รอการยืนยัน</span></div>
-
     </div>
 </div>
 
@@ -279,7 +297,6 @@
         <div class="qr-container">
             <img src="images/qr.jpg" alt="QR Code" style="width: 200px; display: block; margin: 20px auto;">
             <div class="total" id="qr-total">ยอดรวม: 0 บาท</div>
-            <!-- เพิ่มส่วนของการแสดงเวลานับถอยหลัง -->
             <div id="countdown-timer" style="font-size: 20px; font-weight: bold; text-align: center;">10</div>
         </div>
         <p>กรุณาชำระเงินภายใน <span id="countdown-text">/20</span> วินาที</p>
@@ -294,6 +311,7 @@
     const transferButton = document.getElementById('transfer-button');
     const notification = document.getElementById('notification');
 
+    // เลือกสินค้า
     document.querySelectorAll('.item').forEach(item => {
         item.addEventListener('click', () => {
             const itemName = item.innerText;
@@ -314,9 +332,7 @@
 
     function showNotification() {
         notification.style.display = 'block';
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 2000);
+        setTimeout(() => { notification.style.display = 'none'; }, 2000);
     }
 
     function updateOrderList() {
@@ -339,8 +355,8 @@
         totalElement.textContent = `ยอดรวม: ${calculateTotalPrice()} บาท`;
         document.getElementById('item-count').textContent = `จำนวนรายการ: ${totalCount}`;
 
-        const addButtons = document.querySelectorAll('.add-remove-button[data-index]');
-        addButtons.forEach(button => {
+        // ปุ่มเพิ่มลด
+        document.querySelectorAll('.add-remove-button[data-index]').forEach(button => {
             button.addEventListener('click', () => {
                 const index = parseInt(button.getAttribute('data-index'));
                 const action = button.getAttribute('data-action');
@@ -353,13 +369,13 @@
                         orderList.splice(index, 1);
                     }
                 }
-                orderList[index].totalPrice = orderList[index].quantity * orderList[index].price;
+                orderList[index] && (orderList[index].totalPrice = orderList[index].quantity * orderList[index].price);
                 updateOrderList();
             });
         });
 
-        const removeButtons = document.querySelectorAll('.remove-button');
-        removeButtons.forEach(button => {
+        // ปุ่มลบ
+        document.querySelectorAll('.remove-button').forEach(button => {
             button.addEventListener('click', () => {
                 const index = parseInt(button.getAttribute('data-index'));
                 orderList.splice(index, 1);
@@ -372,86 +388,7 @@
         return orderList.reduce((total, item) => total + item.totalPrice, 0);
     }
 
-    cashButton.addEventListener('click', () => {
-        const totalPrice = calculateTotalPrice();
-        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
-            saveOrderForStaff();
-            alert('ชำระเงินเรียบร้อย');
-            orderList.length = 0; // Clear the order list
-            updateOrderList();
-            updateOrderStatus(orderId, "completed");  // เปลี่ยนสถานะเมื่อชำระเงินเสร็จ
-          
-
-        }
-    });
-
-    transferButton.addEventListener('click', () => {
-        const totalPrice = calculateTotalPrice();
-        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
-            document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
-            document.getElementById('qr-modal').style.display = 'block';
-
-        // ตั้งค่าการนับถอยหลัง
-        let timeLeft = 20;  // เวลานับถอยหลัง 20 วินาที
-        const countdownElement = document.getElementById('countdown-timer');
-        const countdownText = document.getElementById('countdown-text');
-        
-        const countdownInterval = setInterval(() => {
-            timeLeft--;
-            countdownElement.textContent = timeLeft;
-            countdownText.textContent = timeLeft;
-
-            if (timeLeft <= 0) {
-                clearInterval(countdownInterval);
-                document.getElementById('qr-modal').style.display = 'none';  // ปิด modal เมื่อหมดเวลา
-                saveOrderForStaff();
-            
-
-                // รีเซ็ตรายการสินค้า
-                orderList.length = 0; // ลบรายการทั้งหมด
-                updateOrderList(); // อัปเดตการแสดงผลรายการสินค้าในตะกร้า
-                updateOrderStatus(orderId, "completed");  // เปลี่ยนสถานะเมื่อชำระเงินเสร็จ
-            }
-        }, 1000);  // อัปเดตทุก 1 วินาที
-    }
-});
-
-
-document.getElementById('close-qr').addEventListener('click', () => {
-    document.getElementById('qr-modal').style.display = 'none';
-});
-
-window.addEventListener('click', function (event) {
-    const qrModal = document.getElementById('qr-modal');
-    if (event.target === qrModal) {
-        qrModal.style.display = 'none';
-    }
-});
-
-
-    function openTab(evt, tabName) {
-        const tabs = document.querySelectorAll('.menu');
-        tabs.forEach(tab => {
-            tab.style.display = "none";
-        });
-        document.getElementById(tabName).style.display = "grid";
-
-        const tablinks = document.querySelectorAll('.tablink');
-        tablinks.forEach(tablink => {
-            tablink.className = tablink.className.replace(" active", "");
-        });
-        evt.currentTarget.className += " active";
-    }
-
-    function searchMenu() {
-        const input = document.getElementById('search').value.toLowerCase();
-        const items = document.querySelectorAll('.item');
-        items.forEach(item => {
-            const text = item.innerText.toLowerCase();
-            item.style.display = text.includes(input) ? "block" : "none";
-        });
-    }
-    
+    // ฟังก์ชันบันทึกออเดอร์และเพิ่มเลขคิว
     function saveOrderForStaff() {
         const orderId = `ORD-${Date.now()}`;
         const orderData = {
@@ -467,39 +404,52 @@ window.addEventListener('click', function (event) {
         localStorage.setItem('orders', JSON.stringify(existingOrders));
     }
 
-    function sendOrderToFirebase(orderList, totalPrice) {
-    db.ref('lastOrderNumber').once('value').then(snapshot => {
-        const orderNumber = (snapshot.val() || 0) + 1;
-        db.ref('lastOrderNumber').set(orderNumber);
-
-        const newOrderRef = db.ref('orders').push();
-        const orderData = {
-            orderNumber,
-            items: orderList,
-            total: totalPrice,
-            status: "pending",
-            createdAt: new Date().toISOString()
-        };
-
-        newOrderRef.set(orderData);
+    cashButton.addEventListener('click', () => {
+        const totalPrice = calculateTotalPrice();
+        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
+            saveOrderForStaff();
+            alert('ชำระเงินเรียบร้อย');
+            orderList.length = 0;
+            updateOrderList();
+        }
     });
-}
 
-function updateOrderStatus(orderId, status) {
-    // หากต้องการอัปเดต Firebase
-    db.ref('orders/' + orderId).update({ status: status });
+    transferButton.addEventListener('click', () => {
+        const totalPrice = calculateTotalPrice();
+        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
+            document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
+            document.getElementById('qr-modal').style.display = 'block';
 
-    // หรือถ้าคุณใช้ localStorage
-    let orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const order = orders.find(o => o.id === orderId);
-    if (order) {
-        order.status = status;
-        localStorage.setItem('orders', JSON.stringify(orders));
-    }
+            let timeLeft = 20;
+            const countdownElement = document.getElementById('countdown-timer');
+            const countdownText = document.getElementById('countdown-text');
+            
+            const countdownInterval = setInterval(() => {
+                timeLeft--;
+                countdownElement.textContent = timeLeft;
+                countdownText.textContent = timeLeft;
 
-    // อัปเดตสถานะที่ UI
-    document.getElementById('status-text').textContent = status;
-}
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById('qr-modal').style.display = 'none';
+                    saveOrderForStaff();
+                    orderList.length = 0;
+                    updateOrderList();
+                }
+            }, 1000);
+        }
+    });
+
+    document.getElementById('close-qr').addEventListener('click', () => {
+        document.getElementById('qr-modal').style.display = 'none';
+    });
+
+    window.addEventListener('click', function(event) {
+        const qrModal = document.getElementById('qr-modal');
+        if (event.target === qrModal) {
+            qrModal.style.display = 'none';
+        }
+    });
 
     totalElement.addEventListener('click', () => {
         const summaryItems = document.getElementById('summary-items');
@@ -523,7 +473,92 @@ function updateOrderStatus(orderId, status) {
             modal.style.display = 'none';
         }
     };
-    
+
+    function openTab(evt, tabName) {
+        const tabs = document.querySelectorAll('.menu');
+        tabs.forEach(tab => tab.style.display = "none");
+        document.getElementById(tabName).style.display = "grid";
+
+        const tablinks = document.querySelectorAll('.tablink');
+        tablinks.forEach(tablink => tablink.className = tablink.className.replace(" active", ""));
+        evt.currentTarget.className += " active";
+    }
+
+    function searchMenu() {
+        const input = document.getElementById('search').value.toLowerCase();
+        const items = document.querySelectorAll('.item');
+        items.forEach(item => {
+            const text = item.innerText.toLowerCase();
+            item.style.display = text.includes(input) ? "block" : "none";
+        });
+    }
+
+    function loadQueue() {
+    const queueContainer = document.getElementById('queue-list');
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    queueContainer.innerHTML = '';
+
+    if (orders.length === 0) {
+        queueContainer.innerHTML = '<p style="text-align:center; color:#555;">ไม่มีออเดอร์</p>';
+        return;
+    }
+
+    orders.forEach((order, index) => {
+        const orderDiv = document.createElement('div');
+        orderDiv.style.padding = '5px';
+        orderDiv.style.marginBottom = '5px';
+        orderDiv.style.border = '1px solid #ccc';
+        orderDiv.style.borderRadius = '5px';
+        orderDiv.style.background = order.status === 'done' ? '#d4edda' : '#fff';
+        orderDiv.innerHTML = `
+            <strong>เลขที่: ${index+1}</strong><br>
+            เวลา: ${order.time}<br>
+            สถานะ: ${order.status === 'done' ? '✔ เรียบร้อย' : 'รอดำเนินการ'}
+        `;
+        queueContainer.appendChild(orderDiv);
+    });
+}
+
+// เรียกโหลดคิวตอนเริ่มและทุกครั้งที่ออเดอร์เปลี่ยน
+window.onload = () => {
+    loadOrders();       // ของเดิมโหลดออเดอร์
+    loadQueue();        // โหลดคิวด้วย
+};
+
+// เรียกอัปเดตคิวทุกครั้งที่บันทึกออเดอร์หรือทำรายการเรียบร้อย
+function saveOrderForStaff() {
+    const orderId = `ORD-${Date.now()}`;
+    const orderData = {
+        id: orderId,
+        items: [...orderList],
+        total: calculateTotalPrice(),
+        status: "pending",
+        time: new Date().toLocaleString()
+    };
+
+    const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+    existingOrders.push(orderData);
+    localStorage.setItem('orders', JSON.stringify(existingOrders));
+    loadQueue();  // <-- เพิ่มตรงนี้
+}
+
+function markDone(index) {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    orders[index].status = 'done';
+    localStorage.setItem('orders', JSON.stringify(orders));
+    loadOrders();
+    loadQueue(); // <-- อัปเดตคิว
+}
+
+function cancelOrder(index) {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    orders.splice(index, 1);
+    localStorage.setItem('orders', JSON.stringify(orders));
+    loadOrders();
+    loadQueue(); // <-- อัปเดตคิว
+}
+
+
 </script>
 </body>
 </html>
