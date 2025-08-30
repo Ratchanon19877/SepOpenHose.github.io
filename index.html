@@ -18,9 +18,40 @@
             text-align: center;
             padding: 15px 0;
         }
-        .container {
-            max-width: 900px;
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
             margin: 30px auto;
+        }
+        .queue-container {
+            width: 280px;
+            max-height: 85vh;
+            overflow-y: auto;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+            position: sticky;
+            top: 20px;
+        }
+        .queue-container h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            text-align: center;
+            color: #c92d22;
+        }
+        .queue-item {
+            border-bottom: 1px solid #ddd;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        .queue-item:last-child {
+            border-bottom: none;
+        }
+        .container {
+            flex: 1;
             background-color: white;
             padding: 20px;
             border-radius: 10px;
@@ -64,12 +95,6 @@
             position: relative;
             overflow: hidden;
         }
-        .item img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-            border-radius: 10px;
-        }
         .item:hover {
             transform: scale(1.05);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
@@ -93,7 +118,36 @@
             font-size: 20px;
             color: #333;
         }
-        .checkout {
+        .payment-button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .payment-button:hover {
+            background-color: #c62828;
+        }
+        .notification {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 999;
+        }
+        @media (max-width: 900px) {
+            .main-layout { flex-direction: column; }
+            .queue-container { width: 100%; max-height: none; position: relative; }
+        }
+
+                .checkout {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -149,48 +203,6 @@
         .remove-button:hover {
             background-color: #c62828;
         }
-        .notification {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #f44336;
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            z-index: 999;
-        }
-        .modal {
-            display: none; 
-            position: fixed; 
-            z-index: 1; 
-            left: 0;
-            top: 0;
-            width: 100%; 
-            height: 100%; 
-            overflow: auto; 
-            background-color: rgb(0,0,0); 
-            background-color: rgba(0,0,0,0.4); 
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto; 
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%; 
-        }
-        .close-button {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        @media (max-width: 600px) {
-            .menu {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
-        }
     </style>
 </head>
 <body>
@@ -198,110 +210,51 @@
     <img src="images/lukchin.jpg" alt="alternatetext" style="width:250px;height:50px;">
 </header>
 
-<div id="queue-container" style="
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    width: 250px;
-    max-height: 400px;
-    overflow-y: auto;
-    background: white;
-    border-radius: 10px;
-    padding: 10px;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.3);
-    z-index: 999;
-">
-    <h3 style="margin:0 0 10px 0; font-size:18px; text-align:center; color:#c92d22;">คิวออเดอร์</h3>
-    <div id="queue-list"></div>
-</div>
-
-
-<div class="container">
-    <div class="tabs">
-        <button class="tablink active" onclick="openTab(event, 'food-menu')">เมนูอาหาร</button>
-        <button class="tablink" onclick="openTab(event, 'drink-menu')">เมนูน้ำ</button>
-        <input type="text" id="search" placeholder="ค้นหาสินค้า" onkeyup="searchMenu()">
-    </div>
-    <!-- เมนูอาหาร -->
-    <div id="food-menu" class="menu">
-        <div class="item" data-price="10">
-            <div>ไส้กรอกชีส 10 บาท</div>
-        </div>
-        <div class="item" data-price="10">
-            <div>ลูกชิ้นเนื้อ 10 บาท</div>
-        </div>
-        <div class="item" data-price="5">
-            <div>ลูกชิ้นปลา 5 บาท</div>
-        </div>
-        <div class="item" data-price="5">
-            <div>ลูกชิ้นกุ้ง 5 บาท</div>
-        </div>
-        <div class="item" data-price="5">
-            <div>ไส้กรอก 5 บาท</div>
-        </div>
-        <div class="item" data-price="5">
-            <div>ไส้กรอกแดง 5 บาท</div>
-        </div>
-        <div class="item" data-price="5">
-            <div>ไส้กรอกนม 5 บาท</div>
-        </div>
-        <div class="item" data-price="5">
-            <div>ลูกชิ้นทอด 5 บาท</div>
-        </div>
-    </div>
-    
-    <!-- เมนูน้ำ -->
-    <div id="drink-menu" class="menu" style="display:none;">
-        <div class="item" data-price="10">
-            <div>น้ำเขียว 10 บาท</div>
-        </div>
-        <div class="item" data-price="10">
-            <div>น้ำแป็บซี่ 10 บาท</div>
-        </div>
-        <div class="item" data-price="10">
-            <div>น้ำแดง 10 บาท</div>
-        </div>
-        <div class="item" data-price="10">
-            <div>น้ำองุ่น 10 บาท</div>
-        </div>
+<div class="main-layout">
+    <!-- คิวออเดอร์ -->
+    <div class="queue-container">
+        <h3>คิวออเดอร์</h3>
+        <div id="queue-list"></div>
     </div>
 
-    <div class="order-list" id="order-list">
-        <h2>รายการสั่งอาหาร</h2>
-        <div class="total" id="item-count">จำนวนรายการ: 0</div>
-        <ul id="order-items"></ul>
-        <div class="total" id="total">ยอดรวม: 0 บาท</div>
-        <button class="payment-button" id="cash-button">ชำระเงินสด</button>
-        <button class="payment-button" id="transfer-button">Qr Code</button>
+    <!-- เมนู + ออร์เดอร์ -->
+    <div class="container">
+        <div class="tabs">
+            <button class="tablink active" onclick="openTab(event, 'food-menu')">เมนูอาหาร</button>
+            <button class="tablink" onclick="openTab(event, 'drink-menu')">เมนูน้ำ</button>
+            <input type="text" id="search" placeholder="ค้นหาสินค้า" onkeyup="searchMenu()">
+        </div>
+        <!-- เมนูอาหาร -->
+        <div id="food-menu" class="menu">
+            <div class="item" data-price="10"><div>ไส้กรอกชีส 10 บาท</div></div>
+            <div class="item" data-price="10"><div>ลูกชิ้นเนื้อ 10 บาท</div></div>
+            <div class="item" data-price="5"><div>ลูกชิ้นปลา 5 บาท</div></div>
+            <div class="item" data-price="5"><div>ลูกชิ้นกุ้ง 5 บาท</div></div>
+            <div class="item" data-price="5"><div>ไส้กรอก 5 บาท</div></div>
+            <div class="item" data-price="5"><div>ไส้กรอกแดง 5 บาท</div></div>
+            <div class="item" data-price="5"><div>ไส้กรอกนม 5 บาท</div></div>
+            <div class="item" data-price="5"><div>ลูกชิ้นทอด 5 บาท</div></div>
+        </div>
+        <!-- เมนูน้ำ -->
+        <div id="drink-menu" class="menu" style="display:none;">
+            <div class="item" data-price="10"><div>น้ำเขียว 10 บาท</div></div>
+            <div class="item" data-price="10"><div>น้ำแป็บซี่ 10 บาท</div></div>
+            <div class="item" data-price="10"><div>น้ำแดง 10 บาท</div></div>
+            <div class="item" data-price="10"><div>น้ำองุ่น 10 บาท</div></div>
+        </div>
+        <!-- รายการสั่งซื้อ -->
+        <div class="order-list" id="order-list">
+            <h2>รายการสั่งอาหาร</h2>
+            <div class="total" id="item-count">จำนวนรายการ: 0</div>
+            <ul id="order-items"></ul>
+            <div class="total" id="total">ยอดรวม: 0 บาท</div>
+            <button class="payment-button" id="cash-button">ชำระเงินสด</button>
+            <button class="payment-button" id="transfer-button">Qr Code</button>
+        </div>
     </div>
 </div>
 
 <div class="notification" id="notification">เพิ่มสินค้าแล้ว!</div>
-
-<!-- Order Summary Modal -->
-<div id="order-summary-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-button" id="close-modal">&times;</span>
-        <h2>สรุปรายการสั่งซื้อ</h2>
-        <ul id="summary-items"></ul>
-        <div class="total" id="summary-total">ยอดรวม: 0 บาท</div>
-        <div id="order-status" class="total">สถานะออเดอร์: <span id="status-text">รอการยืนยัน</span></div>
-    </div>
-</div>
-
-<!-- ✨ เพิ่ม Qr Code Modal -->
-<div id="qr-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-button" id="close-qr">&times;</span>
-        <h2>ชำระเงินด้วย QR Code</h2>
-        <div class="qr-container">
-            <img src="images/qr.jpg" alt="QR Code" style="width: 200px; display: block; margin: 20px auto;">
-            <div class="total" id="qr-total">ยอดรวม: 0 บาท</div>
-            <div id="countdown-timer" style="font-size: 20px; font-weight: bold; text-align: center;">10</div>
-        </div>
-        <p>กรุณาชำระเงินภายใน <span id="countdown-text">/20</span> วินาที</p>
-    </div>
-</div>
 
 <script>
     const orderList = [];
@@ -558,6 +511,30 @@ function cancelOrder(index) {
     loadQueue(); // <-- อัปเดตคิว
 }
 
+ function loadQueue() {
+        const queueList = document.getElementById('queue-list');
+        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+        queueList.innerHTML = '';
+        if (orders.length === 0) {
+            queueList.innerHTML = '<p style="text-align:center; color:#666;">ยังไม่มีคิว</p>';
+        } else {
+            orders.forEach((order, i) => {
+                const div = document.createElement('div');
+                div.className = 'queue-item';
+                div.innerHTML = `
+                    <strong>#${i+1}</strong> ${order.time}<br>
+                    <span style="color:#333;">${order.items.map(it=> it.name + 'x' + it.quantity).join(', ')}</span><br>
+                    <em>รวม ${order.total} บาท</em>
+                `;
+                queueList.appendChild(div);
+            });
+        }
+    }
+    // โหลดคิวทุกครั้งที่หน้าเปิด + รีเฟรชอัตโนมัติ
+    window.onload = () => {
+        loadQueue();
+        setInterval(loadQueue, 3000);
+    };
 
 </script>
 </body>
