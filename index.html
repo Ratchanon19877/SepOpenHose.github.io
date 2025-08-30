@@ -355,6 +355,7 @@
         const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
         existingOrders.push(orderData);
         localStorage.setItem('orders', JSON.stringify(existingOrders));
+        loadQueue();  
     }
 
     cashButton.addEventListener('click', () => {
@@ -370,62 +371,12 @@
     transferButton.addEventListener('click', () => {
         const totalPrice = calculateTotalPrice();
         if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
-            document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
-            document.getElementById('qr-modal').style.display = 'block';
-
-            let timeLeft = 20;
-            const countdownElement = document.getElementById('countdown-timer');
-            const countdownText = document.getElementById('countdown-text');
-            
-            const countdownInterval = setInterval(() => {
-                timeLeft--;
-                countdownElement.textContent = timeLeft;
-                countdownText.textContent = timeLeft;
-
-                if (timeLeft <= 0) {
-                    clearInterval(countdownInterval);
-                    document.getElementById('qr-modal').style.display = 'none';
-                    saveOrderForStaff();
-                    orderList.length = 0;
-                    updateOrderList();
-                }
-            }, 1000);
+            saveOrderForStaff();
+            alert('ชำระเงินเรียบร้อย (โอน QR)');
+            orderList.length = 0;
+            updateOrderList();
         }
     });
-
-    document.getElementById('close-qr').addEventListener('click', () => {
-        document.getElementById('qr-modal').style.display = 'none';
-    });
-
-    window.addEventListener('click', function(event) {
-        const qrModal = document.getElementById('qr-modal');
-        if (event.target === qrModal) {
-            qrModal.style.display = 'none';
-        }
-    });
-
-    totalElement.addEventListener('click', () => {
-        const summaryItems = document.getElementById('summary-items');
-        summaryItems.innerHTML = '';
-        orderList.forEach(item => {
-            const summaryItem = document.createElement('li');
-            summaryItem.textContent = `${item.name} - ${item.quantity} x ${item.price} บาท`;
-            summaryItems.appendChild(summaryItem);
-        });
-        document.getElementById('summary-total').textContent = `ยอดรวม: ${calculateTotalPrice()} บาท`;
-        document.getElementById('order-summary-modal').style.display = 'block';
-    });
-
-    document.getElementById('close-modal').addEventListener('click', () => {
-        document.getElementById('order-summary-modal').style.display = 'none';
-    });
-
-    window.onclick = function(event) {
-        const modal = document.getElementById('order-summary-modal');
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
 
     function openTab(evt, tabName) {
         const tabs = document.querySelectorAll('.menu');
@@ -446,72 +397,8 @@
         });
     }
 
+    // โหลดคิวมาโชว์
     function loadQueue() {
-    const queueContainer = document.getElementById('queue-list');
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    queueContainer.innerHTML = '';
-
-    if (orders.length === 0) {
-        queueContainer.innerHTML = '<p style="text-align:center; color:#555;">ไม่มีออเดอร์</p>';
-        return;
-    }
-
-    orders.forEach((order, index) => {
-        const orderDiv = document.createElement('div');
-        orderDiv.style.padding = '5px';
-        orderDiv.style.marginBottom = '5px';
-        orderDiv.style.border = '1px solid #ccc';
-        orderDiv.style.borderRadius = '5px';
-        orderDiv.style.background = order.status === 'done' ? '#d4edda' : '#fff';
-        orderDiv.innerHTML = `
-            <strong>เลขที่: ${index+1}</strong><br>
-            เวลา: ${order.time}<br>
-            สถานะ: ${order.status === 'done' ? '✔ เรียบร้อย' : 'รอดำเนินการ'}
-        `;
-        queueContainer.appendChild(orderDiv);
-    });
-}
-
-// เรียกโหลดคิวตอนเริ่มและทุกครั้งที่ออเดอร์เปลี่ยน
-window.onload = () => {
-    loadOrders();       // ของเดิมโหลดออเดอร์
-    loadQueue();        // โหลดคิวด้วย
-};
-
-// เรียกอัปเดตคิวทุกครั้งที่บันทึกออเดอร์หรือทำรายการเรียบร้อย
-function saveOrderForStaff() {
-    const orderId = `ORD-${Date.now()}`;
-    const orderData = {
-        id: orderId,
-        items: [...orderList],
-        total: calculateTotalPrice(),
-        status: "pending",
-        time: new Date().toLocaleString()
-    };
-
-    const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    existingOrders.push(orderData);
-    localStorage.setItem('orders', JSON.stringify(existingOrders));
-    loadQueue();  // <-- เพิ่มตรงนี้
-}
-
-function markDone(index) {
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    orders[index].status = 'done';
-    localStorage.setItem('orders', JSON.stringify(orders));
-    loadOrders();
-    loadQueue(); // <-- อัปเดตคิว
-}
-
-function cancelOrder(index) {
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    orders.splice(index, 1);
-    localStorage.setItem('orders', JSON.stringify(orders));
-    loadOrders();
-    loadQueue(); // <-- อัปเดตคิว
-}
-
- function loadQueue() {
         const queueList = document.getElementById('queue-list');
         const orders = JSON.parse(localStorage.getItem('orders') || '[]');
         queueList.innerHTML = '';
@@ -530,12 +417,52 @@ function cancelOrder(index) {
             });
         }
     }
-    // โหลดคิวทุกครั้งที่หน้าเปิด + รีเฟรชอัตโนมัติ
+
+    // โหลดคิวตอนเปิด + รีเฟรชทุก 3 วิ
     window.onload = () => {
         loadQueue();
         setInterval(loadQueue, 3000);
     };
 
+// โหลดคิวมาโชว์
+function loadQueue() {
+    const queueList = document.getElementById('queue-list');
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    queueList.innerHTML = '';
+    if (orders.length === 0) {
+        queueList.innerHTML = '<p style="text-align:center; color:#666;">ยังไม่มีคิว</p>';
+    } else {
+        orders.forEach((order, i) => {
+            const div = document.createElement('div');
+            div.className = 'queue-item';
+
+            // เช็คสถานะออเดอร์
+            let statusText = '';
+            let statusColor = '';
+            if (order.status === "done") {
+                statusText = "✔ เสร็จแล้ว";
+                statusColor = "green";
+            } else if (order.status === "cancel") {
+                statusText = "❌ ยกเลิก";
+                statusColor = "red";
+            } else {
+                statusText = "⌛ รอดำเนินการ";
+                statusColor = "orange";
+            }
+
+            div.innerHTML = `
+                <strong>#${i+1}</strong> ${order.time}<br>
+                <span style="color:#333;">${order.items.map(it=> it.name + 'x' + it.quantity).join(', ')}</span><br>
+                <em>รวม ${order.total} บาท</em><br>
+                <span style="color:${statusColor}; font-weight:bold;">${statusText}</span>
+            `;
+            queueList.appendChild(div);
+        });
+    }
+}
+
+
 </script>
+
 </body>
 </html>
