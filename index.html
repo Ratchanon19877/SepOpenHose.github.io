@@ -203,6 +203,38 @@
         .remove-button:hover {
             background-color: #c62828;
         }
+
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        @media (max-width: 600px) {
+            .menu {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -255,6 +287,32 @@
 </div>
 
 <div class="notification" id="notification">เพิ่มสินค้าแล้ว!</div>
+
+<div id="order-summary-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" id="close-modal">&times;</span>
+        <h2>สรุปรายการสั่งซื้อ</h2>
+        <ul id="summary-items"></ul>
+        <div class="total" id="summary-total">ยอดรวม: 0 บาท</div>
+        <div id="order-status" class="total">สถานะออเดอร์: <span id="status-text">รอการยืนยัน</span></div>
+
+    </div>
+</div>
+
+<!-- ✨ เพิ่ม Qr Code Modal -->
+<div id="qr-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" id="close-qr">&times;</span>
+        <h2>ชำระเงินด้วย QR Code</h2>
+        <div class="qr-container">
+            <img src="images/qr.jpg" alt="QR Code" style="width: 200px; display: block; margin: 20px auto;">
+            <div class="total" id="qr-total">ยอดรวม: 0 บาท</div>
+            <!-- เพิ่มส่วนของการแสดงเวลานับถอยหลัง -->
+            <div id="countdown-timer" style="font-size: 20px; font-weight: bold; text-align: center;">10</div>
+        </div>
+        <p>กรุณาชำระเงินภายใน <span id="countdown-text">/20</span> วินาที</p>
+    </div>
+</div>
 
 <script>
     const orderList = [];
@@ -343,20 +401,23 @@
 
     // ฟังก์ชันบันทึกออเดอร์และเพิ่มเลขคิว
     function saveOrderForStaff() {
-        const orderId = `ORD-${Date.now()}`;
-        const orderData = {
-            id: orderId,
-            items: [...orderList],
-            total: calculateTotalPrice(),
-            status: "pending",
-            time: new Date().toLocaleString()
-        };
+    const orderId = `ORD-${Date.now()}`;
+    const orderData = {
+        id: orderId,
+        items: [...orderList],
+        total: calculateTotalPrice(),
+        status: "pending",
+        time: new Date().toLocaleString()
+    };
 
-        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-        existingOrders.push(orderData);
-        localStorage.setItem('orders', JSON.stringify(existingOrders));
-        loadQueue();  
-    }
+    const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+    existingOrders.push(orderData);
+    localStorage.setItem('orders', JSON.stringify(existingOrders));
+    loadQueue();  
+
+    return orderId; // เพิ่มบรรทัดนี้
+}
+
 
     cashButton.addEventListener('click', () => {
         const totalPrice = calculateTotalPrice();
@@ -377,6 +438,55 @@
             updateOrderList();
         }
     });
+
+    cashButton.addEventListener('click', () => {
+        const totalPrice = calculateTotalPrice();
+        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
+            saveOrderForStaff();
+            alert('ชำระเงินเรียบร้อย');
+            orderList.length = 0; // Clear the order list
+            updateOrderList();
+            updateOrderStatus(orderId, "completed");  // เปลี่ยนสถานะเมื่อชำระเงินเสร็จ
+          
+
+        }
+    });
+
+    transferButton.addEventListener('click', () => {
+        const totalPrice = calculateTotalPrice();
+        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
+            document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
+            document.getElementById('qr-modal').style.display = 'block';
+
+        // ตั้งค่าการนับถอยหลัง
+        let timeLeft = 20;  // เวลานับถอยหลัง 20 วินาที
+        const countdownElement = document.getElementById('countdown-timer');
+        const countdownText = document.getElementById('countdown-text');
+        
+        const countdownInterval = setInterval(() => {
+            timeLeft--;
+            countdownElement.textContent = timeLeft;
+            countdownText.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                document.getElementById('qr-modal').style.display = 'none';  // ปิด modal เมื่อหมดเวลา
+                saveOrderForStaff();
+            
+
+                // รีเซ็ตรายการสินค้า
+                orderList.length = 0; // ลบรายการทั้งหมด
+                updateOrderList(); // อัปเดตการแสดงผลรายการสินค้าในตะกร้า
+                updateOrderStatus(orderId, "completed");  // เปลี่ยนสถานะเมื่อชำระเงินเสร็จ
+            }
+        }, 1000);  // อัปเดตทุก 1 วินาที
+    }
+});
+
+
+document.getElementById('close-qr').addEventListener('click', () => {
+    document.getElementById('qr-modal').style.display = 'none';
+});
 
     function openTab(evt, tabName) {
         const tabs = document.querySelectorAll('.menu');
@@ -461,8 +571,30 @@ function loadQueue() {
     }
 }
 
+// ฟังก์ชันพูดข้อความ
+function speakOrderComplete(orderId) {
+    const msg = new SpeechSynthesisUtterance(`ออเดอร์ ${orderId} เสร็จแล้วครับ`);
+    msg.lang = 'th-TH'; // ภาษาไทย
+    window.speechSynthesis.speak(msg);
+}
+
+// ฟังก์ชันเปลี่ยนสถานะออเดอร์เป็นเสร็จแล้ว + พูด
+function updateOrderStatus(orderId, status) {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+        order.status = status;
+        localStorage.setItem('orders', JSON.stringify(orders));
+        loadQueue(); // รีเฟรชคิว
+        if(status === 'completed' || status === 'done') {
+            speakOrderComplete(orderId);
+        }
+    }
+}
+
 
 </script>
 
 </body>
 </html>
+>
