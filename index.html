@@ -420,41 +420,20 @@
 
 
     cashButton.addEventListener('click', () => {
-        const totalPrice = calculateTotalPrice();
-        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
-            saveOrderForStaff();
-            alert('ชำระเงินเรียบร้อย');
-            orderList.length = 0;
-            updateOrderList();
-        }
-    });
+    const totalPrice = calculateTotalPrice();
+    if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
+        const orderId = saveOrderForStaff(); // ✅ เก็บค่า orderId
+        orderList.length = 0; 
+        updateOrderList();
+        updateOrderStatus(orderId, "completed");  // ✅ ส่งถูกต้อง
+    }
+});
+
 
     transferButton.addEventListener('click', () => {
         const totalPrice = calculateTotalPrice();
         if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
-            saveOrderForStaff();
-            alert('ชำระเงินเรียบร้อย (โอน QR)');
-            orderList.length = 0;
-            updateOrderList();
-        }
-    });
-
-    cashButton.addEventListener('click', () => {
-        const totalPrice = calculateTotalPrice();
-        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
-            saveOrderForStaff();
-            alert('ชำระเงินเรียบร้อย');
-            orderList.length = 0; // Clear the order list
-            updateOrderList();
-            updateOrderStatus(orderId, "completed");  // เปลี่ยนสถานะเมื่อชำระเงินเสร็จ
-          
-
-        }
-    });
-
-    transferButton.addEventListener('click', () => {
-        const totalPrice = calculateTotalPrice();
-        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
+            const orderId = saveOrderForStaff(); // ก่อนเปิด modal
             document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
             document.getElementById('qr-modal').style.display = 'block';
 
