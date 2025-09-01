@@ -429,21 +429,66 @@ function saveOrderForStaff() {
 
 function speakOrderDone(orderNumber) {
     const msg = new SpeechSynthesisUtterance(`ออเดอร์ที่ ${orderNumber} เสร็จแล้วค่ะ`);
-    msg.lang = "th-TH";  // ภาษาไทย
-    msg.rate = 1;        // ความเร็วปกติ
-    msg.pitch = 1;       // ระดับเสียงปกติ
+    msg.lang = "th-TH";
+    msg.rate = 1;
+    msg.pitch = 1;
     speechSynthesis.speak(msg);
 }
 
-function updateOrderStatus(orderId) {
-    const orderElement = document.getElementById(orderId);
-    if (orderElement) {
-        orderElement.classList.add("completed");
-        const orderNumber = orderElement.getAttribute("data-number"); 
-        // ดึงหมายเลขออเดอร์ที่กำหนดไว้ เช่น 1,2,3...
-        speakOrderDone(orderNumber);
+function updateOrderStatus(orderId, status) {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    if (orderIndex !== -1) {
+        orders[orderIndex].status = status;
+        localStorage.setItem('orders', JSON.stringify(orders));
+
+        // ✅ พูดตามหมายเลขคิวจริง ๆ
+        const orderNumber = orderIndex + 1;
+        if (status === "completed") {
+            speakOrderDone(orderNumber);
+        }
+        loadQueue();
     }
 }
+
+function loadQueue() {
+    const queueList = document.getElementById('queue-list');
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    queueList.innerHTML = '';
+
+    if (orders.length === 0) {
+        queueList.innerHTML = '<p style="text-align:center; color:#666;">ยังไม่มีคิว</p>';
+    } else {
+        orders.forEach((order, i) => {
+            const div = document.createElement('div');
+            div.className = 'queue-item';
+            div.setAttribute('id', order.id);          // ✅ ใส่ id
+            div.setAttribute('data-number', i + 1);    // ✅ ใส่หมายเลขคิว
+
+            let statusText = '';
+            let statusColor = '';
+            if (order.status === "completed") {
+                statusText = "✔ เสร็จแล้ว";
+                statusColor = "green";
+            } else if (order.status === "cancel") {
+                statusText = "❌ ยกเลิก";
+                statusColor = "red";
+            } else {
+                statusText = "⌛ รอดำเนินการ";
+                statusColor = "orange";
+            }
+
+            div.innerHTML = `
+                <strong>#${i+1}</strong> ${order.time}<br>
+                <span style="color:#333;">${order.items.map(it => it.name + 'x' + it.quantity).join(', ')}</span><br>
+                <em>รวม ${order.total} บาท</em><br>
+                <span style="color:${statusColor}; font-weight:bold;">${statusText}</span>
+            `;
+            queueList.appendChild(div);
+        });
+    }
+}
+
 
 
 cashButton.addEventListener('click', () => {
