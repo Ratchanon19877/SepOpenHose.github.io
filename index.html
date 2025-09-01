@@ -450,48 +450,6 @@ function updateOrderStatus(orderId, status) {
     }
 }
 
-
-function loadQueue() {
-    const queueList = document.getElementById('queue-list');
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    queueList.innerHTML = '';
-
-    if (orders.length === 0) {
-        queueList.innerHTML = '<p style="text-align:center; color:#666;">ยังไม่มีคิว</p>';
-    } else {
-        orders.forEach((order, i) => {
-            const div = document.createElement('div');
-            div.className = 'queue-item';
-            div.setAttribute('id', order.id);
-            div.setAttribute('data-number', i + 1);
-
-            let statusText = '';
-            let statusColor = '';
-            if (order.status === "completed") {
-                statusText = "✔ เสร็จแล้ว";
-                statusColor = "green";
-            } else if (order.status === "cancel") {
-                statusText = "❌ ยกเลิก";
-                statusColor = "red";
-            } else {
-                statusText = "⌛ รอดำเนินการ";
-                statusColor = "orange";
-            }
-
-            div.innerHTML = `
-                <strong>#${i+1}</strong> ${order.time}<br>
-                <span style="color:#333;">${order.items.map(it => it.name + 'x' + it.quantity).join(', ')}</span><br>
-                <em>รวม ${order.total} บาท</em><br>
-                <span style="color:${statusColor}; font-weight:bold;">${statusText}</span>
-            `;
-            queueList.appendChild(div);
-        });
-    }
-}
-
-
-
-
 cashButton.addEventListener('click', () => {
     const totalPrice = calculateTotalPrice();
     if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
@@ -556,11 +514,49 @@ document.getElementById('close-qr').addEventListener('click', () => {
         });
     }
 
-    // โหลดคิวตอนเปิด + รีเฟรชทุก 1 วิ
+    // โหลดคิวตอนเปิด + รีเฟรชทุก 3 วิ
     window.onload = () => {
         loadQueue();
         setInterval(loadQueue, 1000);
     };
+
+// โหลดคิวมาโชว์
+function loadQueue() {
+    const queueList = document.getElementById('queue-list');
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    queueList.innerHTML = '';
+
+    if (orders.length === 0) {
+        queueList.innerHTML = '<p style="text-align:center; color:#666;">ยังไม่มีคิว</p>';
+    } else {
+        orders.forEach((order, i) => {
+            const div = document.createElement('div');
+            div.className = 'queue-item';
+
+            let statusText = '';
+            let statusColor = '';
+            if (order.status === "completed") {     // ✅ แก้จาก "done" → "completed"
+                statusText = "✔ เสร็จแล้ว";
+                statusColor = "green";
+            } else if (order.status === "cancel") {
+                statusText = "❌ ยกเลิก";
+                statusColor = "red";
+            } else {
+                statusText = "⌛ รอดำเนินการ";
+                statusColor = "orange";
+            }
+
+            div.innerHTML = `
+                <strong>#${i+1}</strong> ${order.time}<br>
+                <span style="color:#333;">${order.items.map(it => it.name + 'x' + it.quantity).join(', ')}</span><br>
+                <em>รวม ${order.total} บาท</em><br>
+                <span style="color:${statusColor}; font-weight:bold;">${statusText}</span>
+            `;
+            queueList.appendChild(div);
+        });
+    }
+}
+
 
 
 </script>
