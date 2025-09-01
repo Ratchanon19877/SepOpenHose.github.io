@@ -1,5 +1,3 @@
-เพิ่มถ้าออเดอร์ไหนเสร็จแล้วให้มีเสียงพูดว่า ออเดอร์...เสร็จแล้วครับ
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -402,46 +400,57 @@
     }
 
     // ฟังก์ชันบันทึกออเดอร์และเพิ่มเลขคิว
-    function saveOrderForStaff() {
-        const orderId = `ORD-${Date.now()}`;
-        const orderData = {
-            id: orderId,
-            items: [...orderList],
-            total: calculateTotalPrice(),
-            status: "pending",
-            time: new Date().toLocaleString()
-        };
+function saveOrderForStaff() {
+    const orderId = `ORD-${Date.now()}`;
+    const orderData = {
+        id: orderId,
+        items: [...orderList],
+        total: calculateTotalPrice(),
+        status: "pending",
+        time: new Date().toLocaleString()
+    };
 
-        const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-        existingOrders.push(orderData);
-        localStorage.setItem('orders', JSON.stringify(existingOrders));
-        loadQueue();  
+    const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+    existingOrders.push(orderData);
+    localStorage.setItem('orders', JSON.stringify(existingOrders));
+    loadQueue();  
+    return orderId;   // ✅ เพิ่ม return
+}
+
+// ฟังก์ชันอัปเดตสถานะออเดอร์
+function updateOrderStatus(orderId, status) {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+        order.status = status;
+        localStorage.setItem('orders', JSON.stringify(orders));
+        loadQueue();
     }
+}
 
-    cashButton.addEventListener('click', () => {
-        const totalPrice = calculateTotalPrice();
-        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
-            saveOrderForStaff();
-            alert('ชำระเงินเรียบร้อย');
-            orderList.length = 0; // Clear the order list
-            updateOrderList();
-            updateOrderStatus(orderId, "completed");  // เปลี่ยนสถานะเมื่อชำระเงินเสร็จ
-          
+cashButton.addEventListener('click', () => {
+    const totalPrice = calculateTotalPrice();
+    if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วยเงินสดหรือไม่?`)) {
+        const orderId = saveOrderForStaff();   // ✅ เก็บค่า orderId
+        alert('ชำระเงินเรียบร้อย');
+        orderList.length = 0; 
+        updateOrderList();
+        updateOrderStatus(orderId, "completed");  // ✅ ใช้ orderId
+    }
+});
 
-        }
-    });
+transferButton.addEventListener('click', () => {
+    const totalPrice = calculateTotalPrice();
+    if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
+        document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
+        document.getElementById('qr-modal').style.display = 'block';
 
-    transferButton.addEventListener('click', () => {
-        const totalPrice = calculateTotalPrice();
-        if (confirm(`คุณต้องการชำระเงิน ${totalPrice} บาท ด้วย Qr Code หรือไม่?`)) {
-            document.getElementById('qr-total').textContent = `ยอดรวม: ฿${totalPrice}`;
-            document.getElementById('qr-modal').style.display = 'block';
-
-        // ตั้งค่าการนับถอยหลัง
-        let timeLeft = 20;  // เวลานับถอยหลัง 20 วินาที
+        let timeLeft = 20;
         const countdownElement = document.getElementById('countdown-timer');
         const countdownText = document.getElementById('countdown-text');
         
+        const orderId = saveOrderForStaff();   // ✅ เก็บค่า orderId
+
         const countdownInterval = setInterval(() => {
             timeLeft--;
             countdownElement.textContent = timeLeft;
@@ -449,18 +458,15 @@
 
             if (timeLeft <= 0) {
                 clearInterval(countdownInterval);
-                document.getElementById('qr-modal').style.display = 'none';  // ปิด modal เมื่อหมดเวลา
-                saveOrderForStaff();
-            
-
-                // รีเซ็ตรายการสินค้า
-                orderList.length = 0; // ลบรายการทั้งหมด
-                updateOrderList(); // อัปเดตการแสดงผลรายการสินค้าในตะกร้า
-                updateOrderStatus(orderId, "completed");  // เปลี่ยนสถานะเมื่อชำระเงินเสร็จ
+                document.getElementById('qr-modal').style.display = 'none';
+                orderList.length = 0; 
+                updateOrderList(); 
+                updateOrderStatus(orderId, "completed");  // ✅ ใช้ orderId
             }
-        }, 1000);  // อัปเดตทุก 1 วินาที
+        }, 1000);
     }
 });
+
 
 
 document.getElementById('close-qr').addEventListener('click', () => {
