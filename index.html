@@ -275,7 +275,7 @@
             <div class="item" data-price="10"><div>น้ำองุ่น 10 บาท</div></div>
         </div>
      
-        
+
         <div class="order-list" id="order-list">
             <h2>รายการสั่งอาหาร</h2>
             <div class="total" id="item-count">จำนวนรายการ: 0</div>
@@ -418,16 +418,24 @@ function saveOrderForStaff() {
     return orderId;   // ✅ เพิ่ม return
 }
 
-// ฟังก์ชันอัปเดตสถานะออเดอร์
-function updateOrderStatus(orderId, status) {
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const order = orders.find(o => o.id === orderId);
-    if (order) {
-        order.status = status;
-        localStorage.setItem('orders', JSON.stringify(orders));
-        loadQueue();
+function speakOrderDone(orderNumber) {
+    const msg = new SpeechSynthesisUtterance(`ออเดอร์ที่ ${orderNumber} เสร็จแล้วค่ะ`);
+    msg.lang = "th-TH";  // ภาษาไทย
+    msg.rate = 1;        // ความเร็วปกติ
+    msg.pitch = 1;       // ระดับเสียงปกติ
+    speechSynthesis.speak(msg);
+}
+
+function updateOrderStatus(orderId) {
+    const orderElement = document.getElementById(orderId);
+    if (orderElement) {
+        orderElement.classList.add("completed");
+        const orderNumber = orderElement.getAttribute("data-number"); 
+        // ดึงหมายเลขออเดอร์ที่กำหนดไว้ เช่น 1,2,3...
+        speakOrderDone(orderNumber);
     }
 }
+
 
 cashButton.addEventListener('click', () => {
     const totalPrice = calculateTotalPrice();
