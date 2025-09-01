@@ -342,6 +342,15 @@
         });
     });
 
+      // 🔊 ฟังก์ชันพูด
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'th-TH';
+            window.speechSynthesis.speak(msg);
+        }
+    }
+
     function showNotification() {
         notification.style.display = 'block';
         setTimeout(() => { notification.style.display = 'none'; }, 2000);
