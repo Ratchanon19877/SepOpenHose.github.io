@@ -462,8 +462,8 @@ function loadQueue() {
         orders.forEach((order, i) => {
             const div = document.createElement('div');
             div.className = 'queue-item';
-            div.setAttribute('id', order.id);          // ✅ ใส่ id
-            div.setAttribute('data-number', i + 1);    // ✅ ใส่หมายเลขคิว
+            div.setAttribute('id', order.id);
+            div.setAttribute('data-number', i + 1);
 
             let statusText = '';
             let statusColor = '';
@@ -488,6 +488,7 @@ function loadQueue() {
         });
     }
 }
+
 
 
 
@@ -555,70 +556,11 @@ document.getElementById('close-qr').addEventListener('click', () => {
         });
     }
 
-    // โหลดคิวมาโชว์
-    function loadQueue() {
-        const queueList = document.getElementById('queue-list');
-        const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-        queueList.innerHTML = '';
-        if (orders.length === 0) {
-            queueList.innerHTML = '<p style="text-align:center; color:#666;">ยังไม่มีคิว</p>';
-        } else {
-            orders.forEach((order, i) => {
-                const div = document.createElement('div');
-                div.className = 'queue-item';
-                div.innerHTML = `
-                    <strong>#${i+1}</strong> ${order.time}<br>
-                    <span style="color:#333;">${order.items.map(it=> it.name + 'x' + it.quantity).join(', ')}</span><br>
-                    <em>รวม ${order.total} บาท</em>
-                `;
-                queueList.appendChild(div);
-            });
-        }
-    }
-
-    // โหลดคิวตอนเปิด + รีเฟรชทุก 3 วิ
+    // โหลดคิวตอนเปิด + รีเฟรชทุก 1 วิ
     window.onload = () => {
         loadQueue();
         setInterval(loadQueue, 1000);
     };
-
-// โหลดคิวมาโชว์
-function loadQueue() {
-    const queueList = document.getElementById('queue-list');
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    queueList.innerHTML = '';
-
-    if (orders.length === 0) {
-        queueList.innerHTML = '<p style="text-align:center; color:#666;">ยังไม่มีคิว</p>';
-    } else {
-        orders.forEach((order, i) => {
-            const div = document.createElement('div');
-            div.className = 'queue-item';
-
-            let statusText = '';
-            let statusColor = '';
-            if (order.status === "completed") {     // ✅ แก้จาก "done" → "completed"
-                statusText = "✔ เสร็จแล้ว";
-                statusColor = "green";
-            } else if (order.status === "cancel") {
-                statusText = "❌ ยกเลิก";
-                statusColor = "red";
-            } else {
-                statusText = "⌛ รอดำเนินการ";
-                statusColor = "orange";
-            }
-
-            div.innerHTML = `
-                <strong>#${i+1}</strong> ${order.time}<br>
-                <span style="color:#333;">${order.items.map(it => it.name + 'x' + it.quantity).join(', ')}</span><br>
-                <em>รวม ${order.total} บาท</em><br>
-                <span style="color:${statusColor}; font-weight:bold;">${statusText}</span>
-            `;
-            queueList.appendChild(div);
-        });
-    }
-}
-
 
 
 </script>
